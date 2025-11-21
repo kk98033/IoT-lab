@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret_key") # 如果沒讀到，就用後面那個預設值
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-# 檢查是否有讀取到 API Key (教學用，方便學生除錯)
+# 檢查是否有讀取到 API Key
 if not API_KEY:
     raise ValueError("錯誤：讀取不到 API Key。請確認你有建立 .env 檔案，且裡面有 GEMINI_API_KEY 設定。")
 
