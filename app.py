@@ -25,27 +25,6 @@ USERS = {
     "student": "iot2025"
 }
 
-# --- 呼叫 AI 的函式 ---
-def ask_gemini(question):
-    headers = {"Content-Type": "application/json"}
-    data = {
-        "contents": [
-            {"parts": [{"text": question}]}
-        ]
-    }
-    try:
-        response = requests.post(API_URL, headers=headers, json=data)
-        
-        # 檢查 HTTP 狀態碼，如果是 400/403/500 等錯誤，要顯示出來
-        if response.status_code != 200:
-            return f"API請求失敗 (Code {response.status_code}): {response.text}"
-
-        result = response.json()
-        answer = result["candidates"][0]["content"]["parts"][0]["text"]
-        return answer
-    except Exception as e:
-        return f"發生錯誤: {e}"
-
 # --- 路由設定 ---
 
 @app.route('/', methods=['GET', 'POST'])
@@ -75,16 +54,31 @@ def logout():
 
 @app.route('/api/ask_ai', methods=['POST'])
 def api_ask_ai():
+    ''' 
+    這是與 Gemini API 互動的函式
+    會發送使用者訊息到 Gemini API，並取得回覆
+
+    請同學完成這個函式的內容
+    請同學完成這個函式的內容
+    請同學完成這個函式的內容
+    '''
+
     if 'user' not in session:
         return jsonify({'reply': '你沒有權限，請先登入'}), 401
 
+    # 從前端取得使用者訊息
     data = request.get_json()
     user_message = data.get('message', '')
 
+    # 這串是把 system prompt 跟使用者訊息組合成完整的 prompt
     system_prompt = "你是一個物聯網課程的助教，請用繁體中文簡短回答學生的問題。"
+    # full_prompt 是要送給 Gemini API 的內容
     full_prompt = f"{system_prompt}\n\n學生問：{user_message}"
 
-    ai_reply = ask_gemini(full_prompt)
+    # 請自己串接上次的 ask_gemini 函式
+    # 請自己串接上次的 ask_gemini 函式
+    # 請自己串接上次的 ask_gemini 函式
+    ai_reply = "請放上串接 Gemini API 的回覆"
     return jsonify({'reply': ai_reply})
 
 if __name__ == '__main__':
