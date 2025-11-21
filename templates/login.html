@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>登入系統</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f4f4f9;
+        }
+
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        input {
+            display: block;
+            margin: 10px auto;
+            padding: 8px;
+            width: 200px;
+        }
+
+        button {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <h2>IoT 課程登入</h2>
+        {% if msg %}
+        <div class="error">{{ msg }}</div>
+        {% endif %}
+        <form action="/" method="POST">
+            <input type="text" name="username" placeholder="帳號 (admin)" required>
+            <input type="password" name="password" placeholder="密碼 (1234)" required>
+            <button type="submit">登入</button>
+        </form>
+    </div>
+</body>
+
+</html>
