@@ -11,13 +11,6 @@ app = Flask(__name__)
 
 # 2. 從環境變數讀取設定
 app.secret_key = os.getenv("SECRET_KEY", "default_secret_key") # 如果沒讀到，就用後面那個預設值
-API_KEY = os.getenv("GEMINI_API_KEY")
-
-# 檢查是否有讀取到 API Key
-if not API_KEY:
-    raise ValueError("錯誤：讀取不到 API Key。請確認你有建立 .env 檔案，且裡面有 GEMINI_API_KEY 設定。")
-
-API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
 # 模擬一組帳號密碼
 USERS = {
@@ -54,32 +47,53 @@ def logout():
 
 @app.route('/api/ask_ai', methods=['POST'])
 def api_ask_ai():
-    ''' 
-    這是與 Gemini API 互動的函式
-    會發送使用者訊息到 Gemini API，並取得回覆
-
-    請同學完成這個函式的內容
-    請同學完成這個函式的內容
-    請同學完成這個函式的內容
-    '''
-
     if 'user' not in session:
         return jsonify({'reply': '你沒有權限，請先登入'}), 401
 
-    # 從前端取得使用者訊息
+    # 1. 從前端取得所有參數
     data = request.get_json()
-    user_message = data.get('message', '')
+    model_name = data.get('model', 'unsloth_model') # 預設模型
+    system_prompt_text = data.get('system_prompt', '你是一個繁體中文助手')
+    title = data.get('title', '')
+    content = data.get('content', '')
 
-    # 這串是把 system prompt 跟使用者訊息組合成完整的 prompt
-    system_prompt = "你是一個物聯網課程的助教，請用繁體中文簡短回答學生的問題。"
-    # full_prompt 是要送給 Gemini API 的內容
-    full_prompt = f"{system_prompt}\n\n學生問：{user_message}"
+    # 2. 依照你的要求，合併標題與內文
+    user_message = f"【標題】{title}\n【內文】{content}"
 
-    # 請自己串接上次的 ask_gemini 函式
-    # 請自己串接上次的 ask_gemini 函式
-    # 請自己串接上次的 ask_gemini 函式
-    ai_reply = "請放上串接 Gemini API 的回覆"
-    return jsonify({'reply': ai_reply})
+    # 3. 準備傳給 Ollama 的資料 (Payload)
+    payload = {
+        "model": model_name,
+        "messages": [
+            {
+                "role": "system",
+                "content": system_prompt_text
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ],
+        "stream": False,  # 不使用串流，一次回傳
+        "options": {
+            "temperature": 0.7
+        }
+    }
+
+    try:
+        # 4. 呼叫 Ollama API
+        response = requests.post(OLLAMA_API_URL, json=payload)
+        
+        if response.status_code == 200:
+            result = response.json()
+            # 取得 AI 回覆
+            ai_reply = result['message']['content']
+            return jsonify({'reply': ai_reply})
+        else:
+            return jsonify({'reply': f"Ollama 發生錯誤: {response.text}"})
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'reply': "連線失敗，請確認樹莓派上的 Ollama 是否有啟動 (systemctl status ollama)"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)

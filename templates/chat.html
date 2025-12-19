@@ -3,76 +3,125 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>AI 聊天室</title>
+    <title>Ollama AI 實驗室</title>
     <style>
         body {
-            font-family: sans-serif;
-            max-width: 600px;
+            font-family: "Microsoft JhengHei", sans-serif;
+            max-width: 800px;
             margin: 20px auto;
-            background: #eee;
+            background: #f0f2f5;
+            color: #333;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #333;
+            background: #2c3e50;
             color: white;
-            padding: 10px 20px;
-            border-radius: 10px 10px 0 0;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
         }
 
         .header a {
-            color: #ff6b6b;
+            color: #ff7675;
             text-decoration: none;
             font-weight: bold;
         }
 
+        /* 聊天紀錄區 */
         #chat-history {
-            height: 400px;
+            height: 300px;
             background: white;
             overflow-y: scroll;
             padding: 20px;
             border: 1px solid #ccc;
+            margin-bottom: 20px;
         }
 
         .msg {
             margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 8px;
             width: fit-content;
             max-width: 80%;
+            white-space: pre-wrap;
+            /* 保留換行 */
+            line-height: 1.5;
         }
 
         .user {
-            background: #dcf8c6;
+            background: #d1e8ff;
             margin-left: auto;
-            text-align: right;
+            border: 1px solid #b8daff;
         }
 
         .ai {
-            background: #f1f0f0;
+            background: #e2e6ea;
             margin-right: auto;
+            border: 1px solid #dae0e5;
         }
 
-        .input-area {
-            display: flex;
-            margin-top: 10px;
+        /* 輸入與設定區塊 */
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #ccc;
+            border-top: none;
         }
 
-        input {
-            flex: 1;
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
             padding: 10px;
-            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            /* 確保 padding 不會撐開寬度 */
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
         }
 
         button {
-            padding: 10px 20px;
-            background: #28a745;
+            width: 100%;
+            padding: 12px;
+            background: #27ae60;
             color: white;
             border: none;
             cursor: pointer;
             font-size: 16px;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #219150;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
     </style>
 </head>
@@ -85,42 +134,86 @@
     </div>
 
     <div id="chat-history">
-        <div class="msg ai">嗨！我是 AI 助教，有什麼問題都可以問我喔！</div>
+        <div class="msg ai">嗨！我是你的 Ollama 助手，請在下方設定模型並輸入文章內容。</div>
     </div>
 
-    <div class="input-area">
-        <input type="text" id="msgInput" placeholder="輸入訊息...">
-        <button onclick="sendMsg()">送出</button>
+    <div class="control-panel">
+
+        <div class="grid-row">
+            <div class="form-group">
+                <label>模型名稱 (Model Name)</label>
+                <input type="text" id="modelName" value="unsloth_model" placeholder="例如: unsloth_model 或 llama3">
+            </div>
+            <div class="form-group">
+                <label>系統提示詞 (System Prompt)</label>
+                <input type="text" id="systemPrompt" value="你是 Dcard 科技業版的嘴砲鄉民，請針對內文進行簡短且一針見血的吐槽。"
+                    placeholder="定義 AI 的角色...">
+            </div>
+        </div>
+
+        <hr style="border-top: 1px dashed #ccc; margin: 15px 0;">
+
+        <div class="form-group">
+            <label>文章標題</label>
+            <input type="text" id="articleTitle" placeholder="輸入標題...">
+        </div>
+
+        <div class="form-group">
+            <label>文章內文</label>
+            <textarea id="articleContent" rows="5" placeholder="輸入內文..."></textarea>
+        </div>
+
+        <button onclick="sendMsg()" id="sendBtn">發送給 AI 分析</button>
     </div>
 
     <script>
         async function sendMsg() {
-            const input = document.getElementById('msgInput');
-            const text = input.value;
-            if (text === "") return;
+            const model = document.getElementById('modelName').value;
+            const sysPrompt = document.getElementById('systemPrompt').value;
+            const title = document.getElementById('articleTitle').value;
+            const content = document.getElementById('articleContent').value;
+            const sendBtn = document.getElementById('sendBtn');
 
-            // 1. 先顯示自己的訊息
-            addBubble(text, 'user');
-            input.value = "";
-            addBubble("思考中...", 'ai', true); // 顯示載入中
+            // 簡單檢查
+            if (title === "" || content === "") {
+                alert("標題和內文都要填寫喔！");
+                return;
+            }
+
+            // 1. 在對話框顯示使用者發送的內容 (顯示標題就好，不然太長)
+            const displayMsg = `【標題】${title}\n(內文已隱藏...)`;
+            addBubble(displayMsg, 'user');
+
+            // 鎖定按鈕避免重複發送
+            sendBtn.disabled = true;
+            sendBtn.innerText = "AI 思考中...";
+            addBubble("思考中...", 'ai', true);
 
             // 2. 發送 API 給 Flask 後端
             try {
                 const response = await fetch('/api/ask_ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text })
+                    body: JSON.stringify({
+                        model: model,
+                        system_prompt: sysPrompt,
+                        title: title,
+                        content: content
+                    })
                 });
 
                 const data = await response.json();
 
-                // 3. 移除 "思考中..." 並顯示 AI 回答
+                // 3. 顯示 AI 回答
                 removeLoading();
                 addBubble(data.reply, 'ai');
 
             } catch (error) {
                 removeLoading();
                 addBubble("系統錯誤：" + error, 'ai');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerText = "發送給 AI 分析";
             }
         }
 
