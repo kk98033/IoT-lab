@@ -18,8 +18,10 @@ USERS = {
     "student": "iot2025"
 }
 
-# --- 路由設定 ---
+# 設定 Ollama 的 API 位置 (因為都在樹莓派本機跑，所以是 localhost)
+OLLAMA_API_URL = "http://localhost:11434/api/chat"
 
+# --- 路由設定 ---
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
