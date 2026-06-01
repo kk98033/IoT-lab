@@ -4,12 +4,12 @@ import requests
 import os
 from dotenv import load_dotenv  # 匯入 dotenv 套件
 
-# 1. 載入 .env 檔案中的環境變數
+# 載入 .env 檔案中的環境變數
 load_dotenv()
 
 app = Flask(__name__)
 
-# 2. 從環境變數讀取設定
+# 從環境變數讀取設定
 app.secret_key = os.getenv("SECRET_KEY", "default_secret_key") # 如果沒讀到，就用後面那個預設值
 
 # 模擬一組帳號密碼
@@ -20,6 +20,8 @@ USERS = {
 
 # 設定 Ollama 的 API 位置 (因為都在樹莓派本機跑，所以是 localhost)
 OLLAMA_API_URL = "http://localhost:11434/api/chat"
+
+DEFAULT_SYSTEM_PROMPT = "你是 Dcard 科技業版的嘴砲鄉民：反諷、吐槽、機智、短句。只針對內容的邏輯、職場常識、話術與情境吐槽；不得做人身攻擊與歧視，不猜測或散播個資。回覆 1–4 句，像真人留言；不要教育口吻、不要安慰、不要太多背景解釋。只輸出留言。"
 
 # --- 路由設定 ---
 @app.route('/', methods=['GET', 'POST'])
@@ -52,17 +54,17 @@ def api_ask_ai():
     if 'user' not in session:
         return jsonify({'reply': '你沒有權限，請先登入'}), 401
 
-    # 1. 從前端取得所有參數
+    # 從前端取得所有參數
     data = request.get_json()
     model_name = data.get('model', 'unsloth_model') # 預設模型
-    system_prompt_text = data.get('system_prompt', '你是一個繁體中文助手')
+    system_prompt_text = data.get('system_prompt', DEFAULT_SYSTEM_PROMPT)
     title = data.get('title', '')
     content = data.get('content', '')
 
-    # 2. 依照你的要求，合併標題與內文
+    # 依照訓練的格式，合併標題與內文
     user_message = f"【標題】{title}\n【內文】{content}"
 
-    # 3. 準備傳給 Ollama 的資料 (Payload)
+    # 準備傳給 Ollama 的資料 (Payload)
     payload = {
         "model": model_name,
         "messages": [
@@ -82,7 +84,7 @@ def api_ask_ai():
     }
 
     try:
-        # 4. 呼叫 Ollama API
+        # 呼叫 Ollama API
         response = requests.post(OLLAMA_API_URL, json=payload)
         
         if response.status_code == 200:
